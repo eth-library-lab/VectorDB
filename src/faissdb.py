@@ -2,26 +2,34 @@
 
 import os
 import json
-
-import plyvel
-from config import FaissDBSettings
+from numpy.typing import ArrayLike
 from typing import List, Dict
+
+from .config import FaissDBSettings
+from .faisskv import FaissKV
+from .indexer import VectorIndexer
+from .utility import create_folder_if_not_exists
+from .utility import logger
 
 class FaissDB():
 
     def __init__(self, settings:FaissDBSettings) -> None:
         self.settings = settings
-        self.partitions:List[Dict] = []
+        self.partitions: Dict = {}
         # check if the base_dir exists, and if everything else is there.
         # if not, create it.
-        if not os.path.exists(self.settings.base_dir):
-            os.mkdir(self.settings.base_dir)
+        create_folder_if_not_exists(self.settings.base_dir, 'data')
         self.read_partitions()
 
     def create_partition(self, partition_name: str):
-        db = plyvel.DB(os.path.join(self.settings.base_dir, partition_name), create_if_missing=True)
-        self.partitions.append({partition_name: db})
-        self.write_partitions()
+        dbpath = os.path.join(self.settings.base_dir, 'data', partition_name)
+        if not partition_name in self.partitions:   
+            create_folder_if_not_exists(dbpath)
+            faisskv = FaissKV(dbpath)
+            self.partitions[partition_name] = {
+                'dbpath': dbpath,
+            }
+            self.write_partitions()
 
     def write_partitions(self):
         # write the partitions information into partitions.json under base_dir
@@ -32,17 +40,34 @@ class FaissDB():
         if os.path.exists(os.path.join(self.settings.base_dir, 'partitions.json')):
             with open(os.path.join(self.settings.base_dir, 'partitions.json'), 'r') as f:
                 self.partitions = json.load(f)
-    
-    def get_partition_db(self,partition_name:str)-> plyvel.DB:
-        if partition_name in self.partitions:
-            return self.partitions[partition_name]
+            logger.info("Successfully read partition.json")
         else:
+            logger.info("partition.json does not exist")
+
+    def get_partition_db(self,partition_name:str) -> FaissKV:
+        if partition_name in self.partitions:
+            dbpath = self.partitions[partition_name]['dbpath']
+            return FaissKV(dbpath)
+        else:
+            logger.error("Partition {} does not exist".format(partition_name))
             return None
 
-    def put(self, partition_name: str, key: bytes, value: bytes):
+    def put(self, partition_name: str, key: ArrayLike, value: bytes):
         db = self.get_partition_db(partition_name)
         db.put(key, value)
     
-    def get(self, partition_name: str, key: bytes):
+    def getVec(self, partition_name: str, key: bytes):
         db = self.get_partition_db(partition_name)
-        return db.get(key)
+        return db.getVector(key)
+
+    def getVal(self, partition_name: str, key: bytes):
+        db = self.get_partition_db(partition_name)
+        return db.getValue(key).decode("utf-8")
+    
+    def create_index(self, partition_name: str):
+        db = self.get_partition_db(partition_name)
+        db.build_index()
+    
+    def knn_query(self, partition_name: str, key: ArrayLike, k: int):
+        db = self.get_partition_db(partition_name)
+        return db.knn_query(key, k)
