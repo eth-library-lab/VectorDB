@@ -51,6 +51,11 @@ class FaissKV():
                 matrix.append(np.frombuffer(v))
         return np.array(matrix)
 
+    def yield_all(self):
+        with self.vecKV.iterator() as iter:
+            for k, v in iter:
+                yield (k)
+                
     def build_index(self):
         logger.info("Building index...")
         matx = self.get_all_vectors().astype(np.float32)
@@ -74,7 +79,8 @@ class FaissKV():
     def knn_query(self, key: ArrayLike, k: int = 1):
         if not self.index:
             self.build_index()
-        # TODO: check if there is index object persisted on disk
-        # if not, build it
         key = key.astype(np.float32)
-        return self.index.search(key, k)
+        D, I = self.index.search(key, k)
+        matx = self.get_all_vectors()
+        key_vectors = matx[I].reshape(k, -1)
+        return D, key_vectors
