@@ -17,12 +17,5 @@ class TestFaissDB(unittest.TestCase):
         val_get = db.getVal('test', x)
         self.assertEqual(val_input, val_get)
 
-    def test_create_index(self):
-        settings = FaissDBSettings()
-        db = FaissDB(settings)
-        db.create_partition('test')
-        db.create_index('test')
-
-
 if __name__ == '__main__':
     unittest.main()
