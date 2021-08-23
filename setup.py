@@ -26,13 +26,10 @@ setuptools.setup(
         "Topic :: Software Development",
     ],
     install_requires=[
-        "gunicorn",
-        "uvicorn",
-        "quart",
-        "toml",
-        "requests",
-        "numpy",
-        "werkzeug"
+        "pydantic",
+        "torch",
+        "plyvel"
+        "numpy==1.21.2"
     ],
     project_urls={
         "Bug Tracker": "https://github.com/composedb/faissdb/issues",
