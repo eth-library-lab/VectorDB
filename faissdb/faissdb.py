@@ -16,6 +16,7 @@ class FaissDB():
     def __init__(self, settings: FaissDBSettings) -> None:
         self.settings = settings
         self.partitions: Dict = {}
+        self.dbs: Dict = {}
         # check if the base_dir exists, and if everything else is there.
         # if not, create it.
         create_folder_if_not_exists(self.settings.base_dir, 'data')
@@ -43,11 +44,16 @@ class FaissDB():
             with open(os.path.join(self.settings.base_dir, 'partitions.json'),
                       'r') as f:
                 self.partitions = json.load(f)
+                for dbname in self.partitions:
+                    dbpath = self.partitions[dbname]['dbpath']
+                    self.dbs[dbname] = FaissKV(dbpath)
             logger.info("Successfully read partition.json")
         else:
             logger.info("partition.json does not exist")
 
     def get_partition_db(self, partition_name: str) -> FaissKV:
+        if partition_name in self.dbs:
+            return self.dbs[partition_name]
         if partition_name in self.partitions:
             dbpath = self.partitions[partition_name]['dbpath']
             return FaissKV(dbpath)

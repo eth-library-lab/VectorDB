@@ -40,10 +40,11 @@ with open(os.path.join(BASE_PATH, file), 'rb') as file:
     r = c.create_requests('aidmodels','image_encoding','encodingSolver', {'file': file})
     result = r.do()
     feature = result.json()["feature"]
-    feature = result.json()["feature"]
     feature = ast.literal_eval(feature)
     feature = np.array(feature)
     feature = feature.reshape(1, 4096)
-    D, I = db.knn_query('voc', feature, k=10)
+    D, keys = db.knn_query('voc', feature, k=10)
     print(D)
-    print(I)
+    for each in keys:
+        value = db.getVal('voc', each)
+        print(value)
