@@ -13,5 +13,5 @@ class Backend(ABC):
         raise NotImplementedError
     
     @abstractmethod
-    def list():
+    def get_all_keys():
         raise NotImplementedError
