@@ -52,6 +52,9 @@ class VStore():
         self.backend.put(current_version, encoded_idx)
         self.backend.put("idx:latest", current_version.encode())
 
+    def clear_index(self):
+        pass
+
     def read_index(self, version=None):
         if version is None:
             version = self.backend.get("idx:latest")
