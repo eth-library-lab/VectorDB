@@ -17,10 +17,14 @@ val_data = {
     "filename":"2.jpg"
 }
 
-vstore.put(feature, val_data)
-
-print(vstore.get(feature))
-
+# vstore.put(feature, val_data)
+# vstore.build_index()
+# vstore.write_index()
 keys = vstore.keys()
-
-print(keys.shape)
+query_key = feature
+query_key = query_key.reshape((1, 4096))
+# vstore.read_index()
+D, keys = vstore.knn_search(query_key, k=10)
+for each in keys:
+    value = vstore.get(each)
+    print(value)
